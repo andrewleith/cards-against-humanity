@@ -1,0 +1,44 @@
+
+<div class="row hide-for-small">
+  <div class="twelve columns">
+    <h2>Your hand</h2>
+  </div>
+
+{{#cards}}
+<div class="four mobile-two columns end">
+  <div class="panel radius card" id="{{id}}">
+    <h3>{{title}}</h3>
+    <div class="pop">
+      choose card
+    </div>
+  </div>
+</div>
+{{/cards}}
+</div>
+<div class="show-for-small">
+  <h2>Your hand</h2>
+  <div class="iosSlider">
+
+    <!-- slider -->
+    <div class="slider">
+
+      {{#cards}}
+      <div class="slide">
+        <div>
+          <h3>{{title}}</h3>
+          
+          <div class="mobile-pop">
+            <button class="button radius chooseMobile" data-id="{{id}}">choose card</button>
+          </div>
+        </div>
+      </div>
+      {{/cards}}
+    </div>
+  </div>
+  <div class='slideSelectors'>
+    {{#cards}}
+    <div class='item'></div>
+    {{/cards}}
+    <div style="clear: both; height: 0; overflow: hidden;"> </div>
+  </div>
+</div>

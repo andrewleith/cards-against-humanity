@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <!-- Set the viewport width to device width for mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+
+  <SocketStream/>
+  <title>Cards Against Humanity</title>
+</head>
+<body>
+
+  <div class="container">
+    <nav class="top-bar" id="nav">
+      <ul>
+        <!-- Title Area -->
+        <li class="name">
+          <h1>
+            <a href="#">
+              Cards Against Humanity
+            </a>
+          </h1>
+        </li>
+        <li class="toggle-topbar"><a href="#"></a></li>
+      </ul>
+
+      <section>
+        <ul class="right">
+          <li class="divider"></li>
+          <li>
+            <a id="logout" class="active" href="#">Logout</a>
+          </li>
+      </ul>
+    </section>
+  </nav>
+</div>
+
+<div class="row">
+  <div class="twelve columns">
+    <div id="messages" class="alert-box" style="display:none"></div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="twelve columns">
+    <div class="row"  id="gamecontrols">
+      <div class="twelve columns">
+        <h2>How this works</h2>
+        <p>
+          This is an online version of  
+          <a href="http://cardsagainsthumanity.com">Cards Against Humanity</a>. 
+          Go there to see the rules.
+        </p>
+        <p>
+          What I had in mind was that people in the same physical location -- and probably getting drunk -- 
+          would play this game using their phones because they didnt have the physical copy.
+          Or they spilled booze all over their shitty printed PDF version.
+        </p>
+        <p>
+          You could also play it over the internet with people who weren't in the same place as you.
+          But that would likely mean you are admitting you are a huge loser.
+        </p>
+      </div>
+      <div class="twelve columns">
+        <div class="panel callout radius">
+          <h2>So, let's play</h2>
+          <p>
+            If the game already exists, you'll be joining it. 
+            If not, you'll create a new game using that name.
+          </p>
+          <form id="join" onsubmit="return false">
+            <div class="row">
+              <div class="six columns">
+                <input type="text" id="username" placeholder="Your name" />
+              </div>
+              <div class="six columns">
+                <input type="text" id="gameId" placeholder="name of the game" />
+              </div>
+            </div>
+            <input type="submit" class="success button" value="Join the game!" />
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<div class="row">
+  <div class="twelve columns" id="blackcard" style="display:none"></div>
+</div>
+<hr />
+<div class="row" id="mobilecards">
+</div>
+<div class="row">
+  <div class="twelve columns panel" id="chosencards" style="display:none"></div>
+</div>
+<div class="row">
+  <div class="twelve columns" id="whitecards" style="display:none"></div>
+</div>
+
+<div class="row">
+  <div class="five columns end">
+    <table class="twelve">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Player</th>
+          <th>Score</th>
+        </tr>
+      </thead>
+      <tbody id="playerslist">
+        <tr id="emptylist">
+          <td>
+            <td>Nobody yet.</td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+
+</body>
+</html>

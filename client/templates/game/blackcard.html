@@ -1,0 +1,17 @@
+<div class="row">
+  <div class="twelve columns centered">
+    <h2>Category <br />
+      <small>choose a white card you think is the best</small>
+    </h2>
+
+  </div>
+</div>
+<div class="row">
+  {{#cards}}
+    <div class="four columns end centered">
+      <div class="panel radius card black" id="{{id}}">
+        <h3>{{title}}</h3>
+      </div>
+    </div>
+  {{/cards}}
+</div>
