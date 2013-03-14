@@ -35,6 +35,7 @@ ss.event.on('loggedin', function() {
   ss.rpc('cah.updateClient');
   
 });
+
 // on logout, render login view
 ss.event.on('endSession', function(message) {
  location.reload();
@@ -45,7 +46,8 @@ ss.event.on('endSession', function(message) {
 // Game Events
 //---------------
 // when the game starts, hide the message
-ss.event.on('game.hasStarted', function(cards) {
+ss.event.on('gameStart', function(cards) {
+
   $('#messages').hide();
   $('#gamecontrols').hide();
 
@@ -57,6 +59,7 @@ ss.event.on('game.hasStarted', function(cards) {
    $('#blackcard').html(html).fadeIn();
 
  });
+
 // when new cards are dealt, display them
 ss.event.on('newCards', function(cards) {
     
@@ -251,7 +254,7 @@ function bindChooseCardsView()
       {
         $(this).removeClass('hover disable');
       }
-      );
+    );
 
   // click a card
   $('.card').bind('click', function() {
@@ -265,6 +268,7 @@ function bindChooseCardsView()
     $('#chosencards').hide();
   });
 }
+
 // 
 // -----------------------------
 // bind the default view events
@@ -272,13 +276,16 @@ function bindChooseCardsView()
 
 // when they click login, send auth request via rpc
 $('#join').on('submit', function() {
+
+
+  gameId = $('#gameId').val();
+  playerName = $('#username').val();
+
   // auth to the server
   ss.rpc('authenticate.join', { 
     name: $('#username').val() 
   });
 
-  gameId = $('#gameId').val();
-  playerName = $('#username').val();
 
 });
 
@@ -340,5 +347,6 @@ function slideChange(args) {
       
   $('.slideSelectors .item').removeClass('selected');
   $('.slideSelectors .item:eq(' + (args.currentSlideNumber - 1) + ')').addClass('selected');
+  $('#whitecards').scrollintoview();;
 
 }

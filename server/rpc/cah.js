@@ -2,6 +2,7 @@
 var util = require('util');
 
 var Game = require('../models/game').Game;
+var test = require('../tests/game').UnitTest;
 
 // game vars
 var games = [];
@@ -32,6 +33,7 @@ exports.actions = function(req, res, ss) {
 
   return {
     createGame: function(gameId, playerName) {
+      
       var game = getGameByGameId(req.session.gameId);
       var playerId = req.session.userId;
 
@@ -48,13 +50,16 @@ exports.actions = function(req, res, ss) {
       // create a new game
       var g = new Game(gameId, Object.create(whiteCards), Object.create(blackCards), ss, req);
 
+      // make player judge
+      g.currentJudge = playerId;
+
       games[gameId] = g;
-      console.log(util.inspect(g));
+      //console.log(util.inspect(g));
       // have player join the game, subscribe to the channel for that game
       g.join(playerId, playerName);
       req.session.channel.subscribe(gameId);
-      
     },
+
     joinGame:  function(gameId, playerName) {
       var game = getGameByGameId(gameId);
       var playerId = req.session.userId;
@@ -71,9 +76,11 @@ exports.actions = function(req, res, ss) {
 
       // join the game, subscribe to game channel
       game.join(playerId, playerName);
+
       req.session.channel.subscribe(gameId);
 
     },
+
     leaveGame: function() {
       var game = getGameByGameId(req.session.gameId);
       var playerId = req.session.userId;
@@ -84,37 +91,36 @@ exports.actions = function(req, res, ss) {
       ss.publish.user(req.session.id, 'endSession');
       req.session.setUserId(null);
       req.session.destroy();
-
     },
+
     // judge only method
     startGame: function() {
       var game = getGameByGameId(req.session.gameId);
       var playerId = req.session.userId;
-
+      
       // if this player is the judge, start the game
-      if (game.isJudge(playerId)) {
-        console.log("START: " + game.test);
+      if (game.isJudge(playerId)) {      
         game.start();
-        console.log("END: " + game.test);
-        console.log('Player' + game.players[playerId].name + '(' + playerId + '): Game started.');
+  
         // let players know the game has started
         game.emitAllGameStart();
       }
-
-      
     },
+
     updateClient: function() {
       var game = getGameByGameId(req.session.gameId);
       var playerId = req.session.userId;
 
       game.updateClient(playerId);
     },
+
     chooseCard:  function(card) {
       var game = getGameByGameId(req.session.gameId);
       var playerId = req.session.userId;
 
       game.chooseCard(playerId, card);
     },
+
     pickWinner: function(card) {
       var game = getGameByGameId(req.session.gameId);
       var playerId = req.session.userId;
@@ -122,6 +128,11 @@ exports.actions = function(req, res, ss) {
       game.pickWinner(playerId, card);
     },
 
+    test: function() {
+      var ut = new test(Object.create(whiteCards), Object.create(blackCards), ss, req);
+
+      ut.testCycling();
+    },
 
     // debug functions
     debug: function() {
@@ -144,19 +155,6 @@ exports.actions = function(req, res, ss) {
     }
   };
 };
-
-//----------------------
-// player notifications
-//----------------------
-
-
-
-emitGameStarted = function(ss, req) {
-  var game = getGameByGameId(req.session.gameId);
-  ss.publish.channel(game.id, 'game.hasStarted', game.judgeCard);
-};
-
-
 
 
 //-----------------

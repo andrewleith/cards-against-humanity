@@ -9,6 +9,11 @@ var CARDTYPES = {
 };
 var MAXWHITECARDS = 6;
 
+// pretty console logging
+var red, blue, reset;
+red   = '\u001b[31m';
+blue  = '\u001b[36m';
+reset = '\u001b[0m';
 
 var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   this.players = [];
@@ -29,18 +34,15 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
 
   // join a game
   this.join = function(playerId, name) {
+    console.log(blue + " '--> game.join(" + playerId + ", " + name + ")" + reset);
+
+    //console.log(util.inspect(this.players));
+
     // if we are still waiting for players, add him directly
     if (this.waitingForPlayers) {
       if (!isPlaying(playerId)) {
         addPlayer(playerId, name);
       }
-
-      // if there is no judge yet, let the first player be the judge
-      if (!this.currentJudge) {
-        this.currentJudge = playerId;
-      }
-
-      console.log("current judge" + this.currentJudge);
       
       // let player know who else is playing
       this.emitPlayersList(playerId);
@@ -59,34 +61,33 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
       // If not, add him to waiting list  
       if (!isPlaying(playerId) && !isWaiting(playerId)) {
         addPlayerToWaitingList(playerId, req.session.name);
+        emitWaitForGameStart(playerId);
       }
     }
   };
 
   // leave a game
   this.leave = function(playerId) {
+    console.log(blue + " '--> game.leave(" + playerId + ")" + reset);
     emitPlayerLeave(playerId);
     removePlayer(playerId); 
   };
 
   // start the game
   this.start = function() {
+    console.log(blue + " '--> game.start(): " + req.session.userId + reset);
+
     this.waitingForPlayers = false;
-    console.log('uhg:' + this.waitingForPlayers);
     setupNewRound(); 
-    console.log('uhg:' + this.waitingForPlayers);
     this.test = true;
   };
   
   // update a client's state to current (in case of refresh)
   this.updateClient = function(playerId) {
-
-
+      console.log(blue + " '--> game.updateClient(" + playerId + ")" + reset);
 
       // - let player know who else is playing
       this.emitPlayersList(playerId);
-
-
 
       // if game has started
       if (!this.waitingForPlayers) {
@@ -117,7 +118,8 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
 
   // have player choose a card
   this.chooseCard = function(playerId, card) {
-
+    console.log(blue + " '--> game.chooseCard(" + playerId + ", " + card.id + ")" + reset);
+    
     // if he already has a card chosen, ignore him, he's an evil hacker 
     if (this.players[playerId].chosenCard) {
       // debug
@@ -133,9 +135,7 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
     }
 
     // if he has no chosen card and isnt the judge, let him do this 
-    // debug
-    console.log('Player' + this.players[playerId].name + '(' + playerId + '): card selected: ' + card.id);
-
+    
     // save selection
     this.players[playerId].chosenCard = card;
     req.session.save();
@@ -157,6 +157,8 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
 
   // let the judge pick the winner for a round
   this.pickWinner = function(playerId, card) {
+    console.log(blue + " '--> game.pickWinner(" + playerId + ", " + card.id + ")" + reset);
+
     // make sure the judge is doing this and not an evil hacker
     if (!that.isJudge(playerId)) {
       console.log("Evil hacker detected: " + playerId + ", ignoring...");
@@ -177,20 +179,18 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   
   // let player know game has started
   this.emitGameStart = function(playerId) {
-   ss.publish.user(playerId, 'gameStart', this.judgeCard);
- };
+    ss.publish.user(playerId, 'gameStart', this.judgeCard);
+  };
 
-   // let all player know game has started
-   this.emitAllGameStart = function(playerId) {
-     ss.publish.channel(this.id, 'gameStart', this.judgeCard);
-   };
+  // let all player know game has started
+  this.emitAllGameStart = function(playerId) {
+    ss.publish.channel(this.id, 'gameStart', this.judgeCard);
+  };
 
   // let player know who else is playing
   this.emitPlayersList = function(playerId) {
     var currentPlayers = [];
-    console.log("emitting players list for: " + playerId);
-    console.log("current judge" + this.currentJudge);
-    console.log(util.inspect(this.players));
+
     for (var player in this.players) {
       ss.publish.user(playerId, 'newPlayer', this.players[player].name, this.isJudge(this.players[player].id), this.players[player].score);
     }
@@ -207,7 +207,7 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   // check if a given player is the current judge
   this.isJudge = function(playerId) {
     if (!this.players[playerId]) return false;
-    console.log("current judge:" + this.currentJudge);
+  
     return (playerId === this.currentJudge);
   };
 
@@ -259,11 +259,7 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   setupNewRound = function () {
     // reset game variables
     // remove chosen cards
-    for (var player in that.players) {
-      if (that.players[player].chosenCard) {
-        that.players[player].removeChosenCard();
-      }
-    }
+    removeChosenCards();
     that.currentCards = [];
 
     // move players from the waiting list into the game
@@ -273,7 +269,17 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
     waitingList = [];
 
     // cycle judge if necessary
-    cycleJudge();
+    // if there is no judge yet, let the first player be the judge
+    if (!that.currentJudge) {
+      for (var p in that.players) {
+        that.currentJudge = that.players[p].id;
+        return;
+      }
+    } 
+    else {
+      cycleJudge();  
+    }
+    
 
     // we are no longer in the first round
     that.firstRound = false;
@@ -283,13 +289,16 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
 
     // give players new cards, update scores, update black card 
     for (var player1 in that.players) {
-      emitNewCards(that.players[player1].id, ss);
+      emitNewCards(player1);
       that.emitPlayersList(that.players[player1].id, ss);
       
       // let the judge know hes judging
       if (that.isJudge(that.players[player1].id)) {
         ss.publish.user(that.players[player1].id, 'judgify');
       }
+
+      // give player black card
+      that.emitGameStart(player1);
     }
 
     //debug
@@ -360,44 +369,34 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
 
   // cycle the judge
   cycleJudge = function() {
-    console.log('cycling judge..');
-    if (that.totalPlayers() <= 1)
-    {
 
-      for (var p in that.players)
-        that.currentJudge = that.players[p].id;
-
-
-      console.log('only one player or ran out of players, choosing: ' + that.currentJudge);      
-      return;
-    }
-
-
+    // if there are no players, set the judge to undefined
     if (that.totalPlayers() === 0) {
       that.currentJudge = undefined;
 
-      console.log('no one left, no more judge');      
       return;
     }
 
-    // if there is no judge yet or we've looped through all players for judging, 
-    // set it back to the first player
-    // else cycle to the next player (check greater than in case players have quit)
-    //if (!that.firstRound) {
-console.log("next:" + nextId());
+    // if there is only one player, make them the judge
+    if (that.totalPlayers() === 1)
+    {
+      for (var p in that.players)
+        that.currentJudge = that.players[p].id;
+
+      return;
+    }
+
+    // cycle to the next judge
     if (nextId() === undefined)
     {
-      for (var p in that.players) {
-        that.currentJudge = that.players[p].id; 
+      for (var p2 in that.players) {
+        that.currentJudge = that.players[p2].id; 
         return;
       } 
     }
     else {
       that.currentJudge = nextId();  
-    }
-
-    console.log('next judge, choosing: ' + that.currentJudge);      
-    //}
+    }   
   };
 
   nextId = function() {
@@ -414,24 +413,43 @@ console.log("next:" + nextId());
 
     return undefined;
   };
+
+  // remove a chosen card
+  removeChosenCards = function() {
+
+    for (var player in that.players) {
+      if (that.players[player].chosenCard) {
+        console.log('removing: ' + that.players[player].chosenCard.id);
+        
+        for (var i = 0; i < that.players[player].cards.length; i++) {
+          console.log('found card:' + that.players[player].cards[i].id);
+          if (that.players[player].cards[i].id === that.players[player].chosenCard.id) {
+            that.players[player].cards.splice(i, 1);
+          }
+        }
+      }
+      
+      that.players[player].chosenCard = undefined;
+    }
+  };
+
   // ----------------
   // notifications
   // ----------------
 
   emitNewCards = function(playerId) {
-    console.log("looking at: "+ playerId);
     
-    console.log("player has: " + that.players[playerId].cards.length);
-    if (that.players[playerId].cards.length < MAXWHITECARDS) {
-      var newCards = getCards(MAXWHITECARDS - that.players[playerId].cards.length, CARDTYPES.WHITE);
-      that.players[playerId].cards = that.players[playerId].cards.concat(newCards);
+    // if hes not the judge, give him cards
+    if (!that.isJudge(playerId)) {
+      if (that.players[playerId].cards.length < MAXWHITECARDS) {
+        var newCards = getCards(MAXWHITECARDS - that.players[playerId].cards.length, CARDTYPES.WHITE);
+        that.players[playerId].cards = that.players[playerId].cards.concat(newCards);
 
-      //debug
-      console.log("gave player " + playerId + " " + that.players[playerId].cards.length + " new cards");
+      }
+
+      // notify player
+      ss.publish.user(playerId, 'newCards', that.players[playerId].cards);
     }
-
-    // notify player
-    ss.publish.user(playerId, 'newCards', that.players[playerId].cards);
   };
 
   // let everyone know a player left
@@ -451,7 +469,7 @@ console.log("next:" + nextId());
         count++;
       }
     }
-    console.log(playernames);
+    
     playernames = playernames.substring(0,  playernames.length - 2);
 
     // if we arent waiting on anyone to pick a card, we're waiting on the judge
