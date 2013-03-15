@@ -1,4 +1,3 @@
-
 var amIJudge = false;
 var gameId;
 var playerName;
@@ -45,7 +44,8 @@ ss.event.on('gameExists', function() {
   ss.rpc('cah.joinGame', gameId, playerName);
 });
 
-// if they are logged in and they refresh, update the client
+// if they are logged in and they 
+, update the client
 ss.event.on('loggedin', function() {
 
   // update client
@@ -56,6 +56,7 @@ ss.event.on('loggedin', function() {
 // on logout, render login view
 ss.event.on('endSession', function(message) {
  location.reload();
+ $('html, body').removeClass('hidescroll');
 });
 
 
@@ -338,6 +339,7 @@ ss.rpc('authenticate.amILoggedIn');
 // ui stuff
 function showGame()
 {
+  $('html, body').addClass('hidescroll');
   $("#gamestart").fadeIn();
 }
 
@@ -348,7 +350,6 @@ function setupUI()
   $(".swipe-container, #swiper .view").css('width', IMG_WIDTH);
   $("#nav-container .nav-item").css('width', NAV_ITEM_WIDTH);
   $("#headernav").fadeIn();
-  $('html, body').addClass('hidescroll');
 
   panels = $("#swiper");
   navitems = $("#nav-container");
