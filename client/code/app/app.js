@@ -44,8 +44,7 @@ ss.event.on('gameExists', function() {
   ss.rpc('cah.joinGame', gameId, playerName);
 });
 
-// if they are logged in and they 
-, update the client
+// if they are logged in and they refresh, update the client
 ss.event.on('loggedin', function() {
 
   // update client
