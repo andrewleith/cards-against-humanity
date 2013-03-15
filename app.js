@@ -10,7 +10,7 @@ players = [];
 ss.client.define('main', {
   view: 'app.html',
   css:  ['libs/foundation.min.css', 'libs/cah.css', 'libs/icons.css'],
-  code: ['libs/jquery.min.js', 'app', 'libs/foundation.min.js', 'libs/cah.js', 'libs/jquery.eqheight.js', 'libs/jquery.easing-1.3.js', 'libs/jquery.iosslider.min.js', 'libs/jquery.scroll.js'],
+  code: ['libs/jquery.min.js', 'app', 'libs/foundation.min.js', 'libs/cah.js', 'libs/jquery.eqheight.js', 'libs/jquery.easing-1.3.js', 'libs/jquery.iosslider.min.js', 'libs/jquery.scroll.js', 'libs/jquery.touchSwipe.min.js'],
   tmpl: '*'
 });
 

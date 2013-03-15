@@ -118,7 +118,7 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
 
   // have player choose a card
   this.chooseCard = function(playerId, card) {
-    console.log(blue + " '--> game.chooseCard(" + playerId + ", " + card.id + ")" + reset);
+    console.log(blue + " '--> game.chooseCard(" + playerId + ", " + card.id + card.title + ")" + reset);
     
     // if he already has a card chosen, ignore him, he's an evil hacker 
     if (this.players[playerId].chosenCard) {
