@@ -1,23 +1,31 @@
 var amIJudge = false;
 var gameId;
 var playerName;
+var gameStart = true;
+var pages = {
+  category: 1,
+  yourcards: 2,
+  scoreboard: 3
+};
 
 // ui vars
-var IMG_WIDTH = $(window).width();
-var NAV_ITEM_WIDTH = IMG_WIDTH/3;
-var currentImg=0;
-var maxImages=3;
+var PANEL_WIDTH;
+var PANEL_HEIGHT;
+var NAV_ITEM_WIDTH;
+var currentPanel=0;
+var maxPanels=3;
 var swipespeed=500;
 var panels, navitems;
 var swipeOptions=
 {
   triggerOnTouchEnd : true, 
   swipeStatus : swipeStatus,
-  allowPageScroll:"vertical",
-  threshold:75      
+  allowPageScroll: "vertical",
+  threshold:75,
+  excludedElements: "button, input, select, textarea, a, .noSwipe",
+  fallbackToMouseEvents: false
 };
 
-setupUI();
 
 //-----------------------
 // Authentication Events
@@ -63,34 +71,49 @@ ss.event.on('endSession', function(message) {
 // Game Events
 //---------------
 // when the game starts, hide the message
-ss.event.on('gameStart', function(cards) {
-
+ss.event.on('gameStart', function() {
   $('#messages').hide();
   $('#gamecontrols').hide();
 
-   // render the game/login template
-   var html = ss.tmpl['game-judge'].render({
-    cards: cards
-  });
-
-   showGame();
-   $('#blackcard').html(html).fadeIn();
-
+  showGame();
+  setupUI();
  });
 
 // when new cards are dealt, display them
-ss.event.on('newCards', function(cards) {
-
+ss.event.on('newCards', function(cards, blackCard) {
+  console.log("new cards, black:" + blackCard.title);
+  $('#messages').hide();
+  $('#gamecontrols').hide();
 
   // render the cards
   var html = ss.tmpl['game-whitecards'].render({
-    cards: cards
+    cards: cards,
+    blackCard: blackCard[0]
   });
 
+  $('#chosencards').html('');
   $('#whitecards').hide().html(html).fadeIn();
-
+  
   bindWhiteCardsView();
+  bindChooseCard();
 
+
+
+
+  // render the game/login template
+  var html = ss.tmpl['game-judge'].render({
+    cards: blackCard
+  });
+
+  $('#blackcard').html(html).fadeIn();
+
+  if (gameStart === true) {
+    goToPanel(pages.category);
+    gameStart = false;
+  }
+  else {
+    goToPanel(pages.yourcards)
+  }
 });
 
 // if the server tells you you picked a card, update the view
@@ -103,19 +126,7 @@ ss.event.on('cardChosen', function(cardId) {
   card = $('#' + cardId);
   console.log(card);
   card.removeClass('disable');
-  
-  card.find('.pop').text("chosen");
-  card.addClass('hover');
-  card.addClass('selected');
-  card.parents('.row').siblings().find('.card').addClass('disable');
-  card.parent().siblings().find('.card').addClass('disable');
-
-  //mobile card
-  mcard = $('[data-id=' + cardId + ']');
-  mcard.text('chosen').addClass('disabled');
-  mcard.addClass('hover');
-  mcard.addClass('selected');
-  mcard.parents('.slide').siblings().find('.mobile-pop').remove();
+  card.addClass("glow");
   
 });
 
@@ -176,37 +187,49 @@ ss.event.on('message', function(message) {
   $('#messages').html(message).fadeIn();
 });
 
+// when we're waiting on the judge
+ss.event.on('waitingOnJudge', function() {
+  //s$('#whitecards').fade
+});
+
 //--------------
 // for the judge
 //--------------
 
 // when its time to actually judge, you will need to choose a card from the other players
-ss.event.on('timeToJudge', function(cards) {
+ss.event.on('timeToJudge', function(cards, blackCard) {
 
   var html = ss.tmpl['game-chosencards'].render({
-    cards: cards
+    cards: cards,
+    blackCard: blackCard[0]
   });
 
   $('#chosencards').html(html).fadeIn();
 
-  bindChooseCardsView();
+  bindChosenCardsView();
+  bindPickWinner();
+  goToPanel(pages.yourcards)
 });
 
 // if you become the judge, hide your hand for the round
-ss.event.on('judgify', function(cards) {
+ss.event.on('judgify', function(blackCard) {
   amIJudge = true;
   // chosen cards to the judge
   var html = ss.tmpl['game-judge'].render({
     message: 'You are the judge',
-    cards: cards
+    cards: blackCard
   });
   
-  var message = ss.tmpl['game-judgemessage'].render();
+  var message = ss.tmpl['game-judgemessage'].render({
+    blackCard: blackCard[0]
+  });
 
-  $('#blackcard').hide().html(html).fadeIn();
+  $('#blackcard').hide().html(message).fadeIn();
   disableWhiteCards();
-  $('#whitecards').hide()
+  $('#whitecards').hide();
+  $('#messages').hide();
   $('#chosencards').html(message).fadeIn();
+  goToPanel(pages.category);
 });
 
 // when there is enough players, allow judge to begin the game
@@ -226,55 +249,71 @@ ss.event.on('canStart', function() {
 // without having to call it explicitly
 
 // bind the events on the cards view to some code
-function bindWhiteCardsView() {
-
-  // hover on a card
-  $('.card').hover(
-    function(){
-      $(this).addClass('hover disable');
-    },
-    function()
-    {
-      $(this).removeClass('hover disable');
-    }
-    );
+var cardClicked;
+function bindWhiteCardsView(buttonType) {
 
   // click a card desktop
-  $('.card').bind('click', function() {
+  $('#whitecards .card').bind('click', function() {
+
+    var $selected = $(this);
+
+    $selected.removeClass('glow'); 
     // tell the server what card i chose
-    console.log("chose:" + $(this).attr('id') + $(this).find('h3').text());
-    ss.rpc('cah.chooseCard', {
-      id: $(this).attr('data-id'),
-      title: $(this).find('h3').text()
+    console.log('revealing');
+    $("#choose").reveal({ 
+      close: function() {
+        $selected.removeClass('glow');
+      }
     });
+
+    $(this).addClass("glow");
+    $("#choose").attr("data-id", $(this).attr('data-id'));
+    $("#choose").attr("data-title", $(this).find('h3').text());
+
+    return false;
   });
 }
 
-// bind the events on the chosencards view
-function bindChooseCardsView()
-{
-    // hover on a card
-    $('.card').hover(
-      function(){
-        $(this).addClass('hover disable');
-      },
-      function()
-      {
-        $(this).removeClass('hover disable');
-      }
-      );
+function bindChosenCardsView(buttonType) {
 
-  // click a card
-  $('.card').bind('click', function() {
+  // click a card desktop
+  $('#chosencards .card').bind('click', function() {
+
+    var $selected = $(this);
+
+    $selected.removeClass('glow'); 
     // tell the server what card i chose
-    ss.rpc('cah.pickWinner', {
-      id: $(this).attr('data-id'),
-      title: $(this).find('h3').text()
+    console.log('revealing');
+    $("#choose").reveal({ 
+      close: function() {
+        $selected.removeClass('glow');
+      }
     });
 
-    // remove chosen cards view
-    $('#chosencards').hide();
+    $(this).addClass("glow");
+    $("#choose").attr("data-id", $(this).attr('data-id'));
+    $("#choose").attr("data-title", $(this).find('h3').text());
+
+    return false;
   });
+}
+
+function bindChooseCard() {
+  console.log('binding choose card');
+  $('#choose').off('click');
+  //$('#choose').off('click', onChooseCard);
+  //$('#choose').off('click', onPickWinner);
+
+  $('#choose').on('click', onChooseCard);
+}
+
+function bindPickWinner() {
+  console.log('binding pickwinner');
+  $('#choose').off('click');
+  //$('#choose').off('click', onChooseCard);
+  //$('#choose').off('click', onPickWinner);
+
+  $('#choose').on('click', onPickWinner);
 }
 
 // 
@@ -342,17 +381,46 @@ function showGame()
   $("#gamestart").fadeIn();
 }
 
+function onChooseCard() {
+  $("#choose").trigger("reveal:close");
+  console.log("choosing");
+  ss.rpc('cah.chooseCard', {
+    id: $(this).attr('data-id'),
+    title: $(this).attr('data-title')
+  });
+}
+
+function onPickWinner() {
+  $("#choose").trigger("reveal:close");
+
+  ss.rpc('cah.pickWinner', {
+    id: $(this).attr('data-id'),
+    title: $(this).attr('data-title')
+  });
+}
+
 
 
 function setupUI()
 {
-  $(".swipe-container, #swiper .view").css('width', IMG_WIDTH);
-  $("#nav-container .nav-item").css('width', NAV_ITEM_WIDTH);
+  var navitems = $("#nav-container .nav-item");
+  PANEL_WIDTH = $('#responsiveWidth').width();
+  PANEL_HEIGHT = $(window).height();
+  NAV_ITEM_WIDTH = PANEL_WIDTH/3;
+
+  $(".swipe-container, #swiper .view").css('width', PANEL_WIDTH);
+  $(".swipe-container, #swiper .view").css('height', PANEL_HEIGHT);
+  
+  navitems.css('width', NAV_ITEM_WIDTH);
   $("#headernav").fadeIn();
 
   panels = $("#swiper");
-  navitems = $("#nav-container");
+  navcontainer = $("#nav-container");
   panels.swipe( swipeOptions );
+
+  navitems.click(function() {
+    goToPanel($(this).index())
+  });
 }
 
 function swipeStatus(event, phase, direction, distance)
@@ -363,56 +431,72 @@ function swipeStatus(event, phase, direction, distance)
     var duration=0;
     
     if (direction == "left")
-      scrollImages((IMG_WIDTH * currentImg) + distance, duration, panels);
+      scrollPanels((PANEL_WIDTH * currentPanel) + distance, duration, panels);
     
     else if (direction == "right")
-      scrollImages((IMG_WIDTH * currentImg) - distance, duration, panels);
+      scrollPanels((PANEL_WIDTH * currentPanel) - distance, duration, panels);
     
   }
   
   else if ( phase == "cancel")
   {
-    scrollImages(IMG_WIDTH * currentImg, swipespeed, panels);
+    scrollPanels(PANEL_WIDTH * currentPanel, swipespeed, panels);
   }
   
   else if ( phase =="end" )
   {
     if (direction == "right")
-      previousImage()
+      previousPanel()
     else if (direction == "left")     
-      nextImage()
+      nextPanel()
   }
 }
 
-function previousImage()
+function previousPanel()
 {
-  navitems.find('.nav-item:nth-child(' + (currentImg + 2) + ')').removeClass('active');
-  currentImg = Math.max(currentImg-1, 0);
-  scrollImages( IMG_WIDTH * currentImg, swipespeed, panels);
-  scrollImages( NAV_ITEM_WIDTH  * currentImg, swipespeed, navitems);
-  navitems.find('.nav-item:nth-child(' + (currentImg + 2) + ')').addClass('active');
+  navcontainer.find('.nav-item:nth-child(' + (currentPanel + 2) + ')').removeClass('active');
+  currentPanel = Math.max(currentPanel-1, 0);
+  scrollPanels( PANEL_WIDTH * currentPanel, swipespeed, panels);
+  scrollPanels( NAV_ITEM_WIDTH  * currentPanel, swipespeed, navcontainer);
+  navcontainer.find('.nav-item:nth-child(' + (currentPanel + 2) + ')').addClass('active');
 }
 
-function nextImage()
+function nextPanel()
 {
-  navitems.find('.nav-item:nth-child(' + (currentImg+2) + ')').removeClass('active');
-  console.log("removing:" + (currentImg+2));
-  currentImg = Math.min(currentImg+1, maxImages-1);
-  scrollImages( IMG_WIDTH * currentImg, swipespeed, panels);
-  scrollImages( NAV_ITEM_WIDTH  * currentImg, swipespeed, navitems);
-  navitems.find('.nav-item:nth-child(' + (currentImg + 2) + ')').addClass('active');
+  navcontainer.find('.nav-item:nth-child(' + (currentPanel+2) + ')').removeClass('active');
+  console.log("removing:" + (currentPanel+2));
+  currentPanel = Math.min(currentPanel+1, maxPanels-1);
+  scrollPanels( PANEL_WIDTH * currentPanel, swipespeed, panels);
+  scrollPanels( NAV_ITEM_WIDTH  * currentPanel, swipespeed, navcontainer);
+  navcontainer.find('.nav-item:nth-child(' + (currentPanel + 2) + ')').addClass('active');
+}
+function goToPanel(index) {
   
+  if (index-1 < currentPanel) {
+    while (index-1 < currentPanel) {
+      previousPanel();
+    }
+    return;
+  }
+
+  if (index-1 > currentPanel) {
+    while (index-1 > currentPanel) {
+      nextPanel();
+    }
+  }
 }
 
 /**
 * Manuallt update the position of the panels on drag
 */
-function scrollImages(distance, duration, item)
+function scrollPanels(distance, duration, item)
 {
   item.css("-webkit-transition-duration", (duration/1000).toFixed(1) + "s");
+  item.css("transition-duration", (duration/1000).toFixed(1) + "s");
   
   //inverse the number we set in the css
   var value = (distance<0 ? "" : "-") + Math.abs(distance).toString();
   
   item.css("-webkit-transform", "translate3d("+value +"px,0px,0px)");
+  item.css("transform", "translate3d("+value +"px,0px,0px)");
 }

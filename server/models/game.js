@@ -24,8 +24,8 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   this.currentCards = [];
   this.judgeCard = undefined;
   this.id = id;
-  this.gameWhiteCards = gameWhiteCards;
-  this.gameBlackCards = gameBlackCards;
+  //this.gameWhiteCards = gameWhiteCards;
+  //this.gameBlackCards = gameBlackCards;
   var that = this;
 
   // ---------------
@@ -36,14 +36,18 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   this.join = function(playerId, name) {
     console.log(blue + " '--> game.join(" + playerId + ", " + name + ")" + reset);
 
-    //console.log(util.inspect(this.players));
-
     // if we are still waiting for players, add him directly
     if (this.waitingForPlayers) {
       if (!isPlaying(playerId)) {
         addPlayer(playerId, name);
       }
       
+      // set first player as judge
+      if (this.totalPlayers() === 1)
+      {
+        this.currentJudge = playerId;
+      }
+
       // let player know who else is playing
       this.emitPlayersList(playerId);
 
@@ -78,19 +82,20 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
     console.log(blue + " '--> game.start(): " + req.session.userId + reset);
 
     this.waitingForPlayers = false;
+    this.currentJudge = undefined;
     setupNewRound(); 
     this.test = true;
   };
   
   // update a client's state to current (in case of refresh)
   this.updateClient = function(playerId) {
-      console.log(blue + " '--> game.updateClient(" + playerId + ")" + reset);
+    console.log(blue + " '--> game.updateClient(" + playerId + ")" + reset);
 
       // - let player know who else is playing
       this.emitPlayersList(playerId);
 
       // if game has started
-      if (!this.waitingForPlayers) {
+      if (!this.waitingForPlayers && !isWaiting(playerId)) {
         // update players with who is left to choose a card
         emitWaitingOnPlayers(playerId);
         
@@ -103,7 +108,13 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
         // - Give chosen card
         emitCardChosen(playerId);
         
+        // let the judge know hes judging
+        if (this.isJudge(playerId)) {
+          ss.publish.user(playerId, 'judgify', this.judgeCard);
+        }
+
         // - Tell judge its judging time
+        // TODO: this should emit to all players...
         emitTimeToJudge();
       } 
       else {
@@ -183,14 +194,12 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   };
 
   // let all player know game has started
-  this.emitAllGameStart = function(playerId) {
+  this.emitAllGameStart = function() {
     ss.publish.channel(this.id, 'gameStart', this.judgeCard);
   };
 
   // let player know who else is playing
   this.emitPlayersList = function(playerId) {
-    var currentPlayers = [];
-
     for (var player in this.players) {
       ss.publish.user(playerId, 'newPlayer', this.players[player].name, this.isJudge(this.players[player].id), this.players[player].score);
     }
@@ -207,7 +216,7 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   // check if a given player is the current judge
   this.isJudge = function(playerId) {
     if (!this.players[playerId]) return false;
-  
+
     return (playerId === this.currentJudge);
   };
 
@@ -216,6 +225,16 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   this.totalPlayers = function() {
     var i = 0;
     for (var player in this.players) {
+      i++;
+    }
+
+    return i;  
+  };
+
+  // get total number of players waiting
+  this.totalWaiting = function() {
+    var i = 0;
+    for (var player in this.waitingList) {
       i++;
     }
 
@@ -239,7 +258,7 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   // ---------------
 
   // add a player
-  addPlayer = function(id, name) {
+  var addPlayer = function(id, name) {
     // add player to the waiting list, he'll get moved to the game at the start of a new round
     var newPlayer = new Player(name, id);
     that.players[id] = newPlayer;  
@@ -249,14 +268,14 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   };
 
   // add a new player
-  addPlayerToWaitingList = function(id, name) {
+  var addPlayerToWaitingList = function(id, name) {
     // add player to the waiting list, he'll get moved to the game at the start of a new round
     var newPlayer = new Player(name, id);
     that.waitingList[id] = newPlayer;  
   };
 
   // setup the next round
-  setupNewRound = function () {
+  var setupNewRound = function () {
     // reset game variables
     // remove chosen cards
     removeChosenCards();
@@ -266,21 +285,21 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
     for (var waitplayer in that.waitingList) {
       that.players[that.waitingList[waitplayer].id] = that.waitingList[waitplayer];
     }
-    waitingList = [];
+    that.waitingList = [];
 
     // cycle judge if necessary
     // if there is no judge yet, let the first player be the judge
     if (!that.currentJudge) {
       for (var p in that.players) {
         that.currentJudge = that.players[p].id;
-        return;
+        break;
       }
     } 
     else {
       cycleJudge();  
     }
     
-
+    console.log("MADE IT");
     // we are no longer in the first round
     that.firstRound = false;
 
@@ -294,11 +313,11 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
       
       // let the judge know hes judging
       if (that.isJudge(that.players[player1].id)) {
-        ss.publish.user(that.players[player1].id, 'judgify');
+        ss.publish.user(that.players[player1].id, 'judgify', that.judgeCard);
       }
 
       // give player black card
-      that.emitGameStart(player1);
+      //that.emitGameStart(player1);
     }
 
     //debug
@@ -306,7 +325,7 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   };
 
   // give player a point
-  givePoint = function(cardId) {
+  var givePoint = function(cardId) {
     for (var player in that.players) {
       if (that.players[player].chosenCard) {
         if (that.players[player].chosenCard.id == cardId) {
@@ -319,17 +338,17 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   };
 
   // check if a given player is in the game
-  isPlaying = function(playerId) {
+  var isPlaying = function(playerId) {
     return (that.players[playerId]) ? true : false;
   };
 
   // check if a given player is in the waiting list
-  isWaiting = function(playerId) {
+  var isWaiting = function(playerId) {
     return (that.waitingList[playerId]) ? true : false;
   };
 
   // remove a player from the game
-  removePlayer = function(id) {
+  var removePlayer = function(id) {
     //if (isPlaying(id)) {
       delete that.players[id];  
     //}
@@ -341,7 +360,7 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   };
 
   // return the number of randomly picked cards specified by quantity and cardtype
-  getCards = function(quantity, cardtype) {
+  var getCards = function(quantity, cardtype) {
     var cards = [];
     var deck = [];
     
@@ -368,7 +387,7 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   };
 
   // cycle the judge
-  cycleJudge = function() {
+  var cycleJudge = function() {
 
     // if there are no players, set the judge to undefined
     if (that.totalPlayers() === 0) {
@@ -399,7 +418,7 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
     }   
   };
 
-  nextId = function() {
+  var nextId = function() {
     var finished = false;
     for (var p in that.players) {
       if (finished) {
@@ -415,7 +434,7 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   };
 
   // remove a chosen card
-  removeChosenCards = function() {
+  var removeChosenCards = function() {
 
     for (var player in that.players) {
       if (that.players[player].chosenCard) {
@@ -437,8 +456,8 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   // notifications
   // ----------------
 
-  emitNewCards = function(playerId) {
-    
+  var emitNewCards = function(playerId) {
+
     // if hes not the judge, give him cards
     if (!that.isJudge(playerId)) {
       if (that.players[playerId].cards.length < MAXWHITECARDS) {
@@ -448,17 +467,17 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
       }
 
       // notify player
-      ss.publish.user(playerId, 'newCards', that.players[playerId].cards);
+      ss.publish.user(playerId, 'newCards', that.players[playerId].cards, that.judgeCard);
     }
   };
 
   // let everyone know a player left
-  emitPlayerLeave = function(playerId) {
+  var emitPlayerLeave = function(playerId) {
     ss.publish.channel(req.session.gameId, 'playerLeave', that.players[playerId].name); 
   };
 
   // let players know who is left to choose a card
-  emitWaitingOnPlayers = function(playerId) {
+  var emitWaitingOnPlayers = function(playerId) {
     var playernames = '';
     var count = 0;
 
@@ -482,36 +501,43 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   };
 
   // let player know what card he chose
-  emitCardChosen = function(playerId) {
+  var emitCardChosen = function(playerId) {
     if (that.players[playerId].chosenCard) {
       ss.publish.user(playerId, 'cardChosen', that.players[playerId].chosenCard.id);
     }
   };
 
   // let judge know its judging time
-  emitTimeToJudge = function() {
+  var emitTimeToJudge = function() {
     // TODO: encapsulate this shit
     if (that.totalPlayers() > 1 && that.totalChosenCards() === that.totalPlayers() - 1)
     {
-      // TODO: make judge lookup a method of the game object
-      ss.publish.user(that.currentJudge, 'timeToJudge', that.currentCards);
+      for (var p in that.players) {
+        if (that.isJudge(p)) {
+          ss.publish.user(that.currentJudge, 'timeToJudge', that.currentCards, that.judgeCard);    
+        }
+        else
+        {
+          ss.publish.user(p, 'waitingOnJudge');
+        }
+      }
     }
   };
 
   // in the first round, let the judge know he can start the game
-  emitGameControls = function(playerId) {
-    if (that.firstRound && that.isJudge(playerId)) {
-      ss.publish.user(playerId, 'gameControls', that.judgeCard);
-    } 
-  };
+  // var emitGameControls = function(playerId) {
+  //   if (that.firstRound && that.isJudge(playerId)) {
+  //     ss.publish.user(playerId, 'gameControls', that.judgeCard);
+  //   } 
+  // };
 
   // let player know game hasnt started
-  emitWaitForGameStart = function(playerId) {
+  var emitWaitForGameStart = function(playerId) {
     ss.publish.user(playerId, 'waitForGameStart');
   };
 
   // if there are enough players, let judge know he can start the game
-  emitJudgeStart = function() {
+  var emitJudgeStart = function() {
     if (that.totalPlayers() > 1) {
       ss.publish.user(that.currentJudge, 'canStart');
     }

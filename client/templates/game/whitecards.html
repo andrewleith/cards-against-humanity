@@ -1,13 +1,15 @@
-<div class="three columns">
-  {{#cards}}
-  <div class="card">
-    <div>
-      <h3>{{title}}</h3>
 
-      <div class="mobile-pop">
-        <button class="button radius" data-id="{{id}}">choose card</button>
-      </div>
-    </div>
-  </div>
-  {{/cards}}
+<div class="card black">
+  <h3>{{blackCard.title}}</h3>
 </div>
+
+{{#cards}}
+<div class="four columns mobile-two">
+  <div class="card white">
+      <div data-id={{id}}>
+        <h3>{{title}}</h3>
+      </div>
+  </div>
+</div>
+{{/cards}}
+

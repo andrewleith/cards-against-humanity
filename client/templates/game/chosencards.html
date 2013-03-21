@@ -1,19 +1,22 @@
 
-<div class="row">
-  <div class="twelve columns">
+<div class="card black">
+  <h3>{{blackCard.title}}</h3>
+</div>
+
+<div class="container">
+  <div class="twelve columns calglout panegl">
     <h2>Choose a winner</h2>
   </div>
 </div>
 
 {{#cards}}
-  <div class="three columns end">
-    <div class="card" data-id="{{id}}">
+<div class="three columns mobile-two">
+  <div class="card white">
+    <div data-id={{id}}>
       <h3>{{title}}</h3>
-      <div class="mobile-pop">
-        <button class="button radius" data-id="{{id}}">choose card</button>
-      </div>
     </div>
   </div>
+</div>
 {{/cards}}
 
 

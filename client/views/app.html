@@ -14,10 +14,12 @@
   <div class="container" id="headernav">
     <div class="top-bar">
       <div id="nav-container">
-        <span class="nav-item"></span>
-        <span class="nav-item active">Category</span>
-        <span class="nav-item">Your cards</span>
-        <span class="nav-item">Scoreboard</span>
+        <div class="container">
+          <span class="nav-item"></span>
+          <span class="nav-item active">Category</span>
+          <span class="nav-item">Your cards</span>
+          <span class="nav-item">Scoreboard</span>
+        </div>
       </div>
     </div>
   </div>
@@ -42,16 +44,15 @@
             Or they spilled booze all over their shitty printed PDF version.
           </p>
           <p>
-            You could also play it over the internet with people who weren't in the same place as you.
-            But that would likely mean you are admitting you are a huge loser.
+            You *could* also play it over the internet with people who weren't in the same place as you, 
+            but it won't be fun.
           </p>
         </div>
         <div class="twelve columns">
           <div class="panel callout radius">
             <h2>So, let's play</h2>
             <p>
-              If the game already exists, you'll be joining it. 
-              If not, you'll create a new game using that name.
+              If you want to join a game someone else has already created, ask them to text or email you the link.
             </p>
             <form id="join" onsubmit="return false">
               <div class="row">
@@ -62,7 +63,7 @@
                   <input type="text" id="gameId" placeholder="name of the game" />
                 </div>
               </div>
-              <input type="submit" class="success button" value="Join the game!" />
+              <input type="submit" class="success button" value="Create a game!" />
             </form>
           </div>
         </div>
@@ -70,43 +71,44 @@
     </div>
   </div>
   <div class="row" id="gamestart">
-    <div class="swipe-container">
-      <div id="swiper">   
-        <div class="view">
-          <div class="twelve columns" id="blackcard" style="display:none"></div>
-        </div>
-        <div class="view">
-          <div class="twelve columns" id="whitecards" style="display:none"></div>
-          <div class="row">
-            <div class="twelve columns panel" id="chosencards" style="display:none"></div>
+    <div class="twelve columns" id="responsiveWidth">
+      <div class="swipe-container">
+        <div id="swiper">   
+          <div class="view hidescroll">
+            <div class="twelve columns" id="blackcard" style="display:none"></div>
           </div>
-        </div>
-        <div class="view">
-          <div class="five columns end">
-            <table class="twelve">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>Player</th>
-                  <th>Score</th>
-                </tr>
-              </thead>
-              <tbody id="playerslist">
-                <tr id="emptylist">
-                  <td>
-                    <td>Nobody yet.</td>
-                    <td></td>
+          <div class="view scroll">
+            <div class="twelve columns" id="whitecards" style="display:none"></div>
+            <div class="twelve columns" id="chosencards" style="display:none"></div>
+            
+
+          </div>
+          <div class="view hidescroll">
+            <div class="five columns end">
+              <table class="twelve">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>Player</th>
+                    <th>Score</th>
                   </tr>
-                </tbody>
-              </table>
+                </thead>
+                <tbody id="playerslist">
+                  <tr id="emptylist">
+                    <td>
+                      <td>Nobody yet.</td>
+                      <td></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-
-    <script>
-
-    </script>
+    <div id="choose" class="reveal-modal small">
+      <p>Select card</p>
+    </div>
   </body>
   </html>
