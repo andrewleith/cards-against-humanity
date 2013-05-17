@@ -7,7 +7,7 @@ var CARDTYPES = {
   WHITE: 0,
   BLACK: 1
 };
-var MAXWHITECARDS = 6;
+var MAXWHITECARDS = 8;
 
 // pretty console logging
 var red, blue, reset;
@@ -15,7 +15,7 @@ red   = '\u001b[31m';
 blue  = '\u001b[36m';
 reset = '\u001b[0m';
 
-var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
+var Game = function(gameWhiteCards, gameBlackCards, ss, req) {
   this.players = [];
   this.waitingList = [];
   this.waitingForPlayers = true;
@@ -23,10 +23,16 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   this.currentJudge = undefined;
   this.currentCards = [];
   this.judgeCard = undefined;
-  this.id = id;
+  this.round = 0;
+  this.lookupId = 'xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+    return v.toString(16);
+  });
+  this.id = this.lookupId;
   //this.gameWhiteCards = gameWhiteCards;
   //this.gameBlackCards = gameBlackCards;
   var that = this;
+
 
   // ---------------
   // public methods
@@ -52,7 +58,7 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
       this.emitPlayersList(playerId);
 
       // let all players know this player joined
-      ss.publish.channel(id, 'newPlayer', name, this.isJudge(playerId), this.players[playerId].score);
+      ss.publish.channel(this.id, 'newPlayer', name, this.isJudge(playerId), this.players[playerId].score);
 
       // let player know we are waiting to start
       emitWaitForGameStart(playerId);
@@ -110,7 +116,7 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
         
         // let the judge know hes judging
         if (this.isJudge(playerId)) {
-          ss.publish.user(playerId, 'judgify', this.judgeCard);
+          ss.publish.user(playerId, 'judgify', this.judgeCard, this.lookupId, this.round, this.isJudge(playerId));
         }
 
         // - Tell judge its judging time
@@ -178,6 +184,9 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
     // give the winner a point
     givePoint(card.id);
 
+    // annouce winner
+    emitWinner(playerId);
+
     // remove chosen cards
     // start a new round
     setupNewRound();
@@ -190,12 +199,12 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
   
   // let player know game has started
   this.emitGameStart = function(playerId) {
-    ss.publish.user(playerId, 'gameStart', this.judgeCard);
+    ss.publish.user(playerId, 'gameStart', this.judgeCard, this.lookupId);
   };
 
   // let all player know game has started
   this.emitAllGameStart = function() {
-    ss.publish.channel(this.id, 'gameStart', this.judgeCard);
+    ss.publish.channel(this.id, 'gameStart', this.judgeCard, this.lookupId);
   };
 
   // let player know who else is playing
@@ -207,6 +216,101 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
 
 
 
+  // ----------------
+  // private notifications
+  // ----------------
+
+  var emitNewCards = function(playerId) {
+
+    // if hes not the judge, give him cards
+    if (!that.isJudge(playerId)) {
+      if (that.players[playerId].cards.length < MAXWHITECARDS) {
+        var newCards = getCards(MAXWHITECARDS - that.players[playerId].cards.length, CARDTYPES.WHITE);
+        that.players[playerId].cards = that.players[playerId].cards.concat(newCards);
+
+      }
+
+      // notify player
+      ss.publish.user(playerId, 'newCards', that.players[playerId].cards, that.judgeCard, that.lookupId, that.round, that.isJudge(playerId));
+    }
+  };
+
+  // let everyone know a player left
+  var emitPlayerLeave = function(playerId) {
+    ss.publish.channel(req.session.gameId, 'playerLeave', that.players[playerId].name); 
+  };
+
+  // let players know who is left to choose a card
+  var emitWaitingOnPlayers = function(playerId) {
+    var playernames = '';
+    var count = 0;
+
+    for (var player in that.players)
+    {
+      if (!that.isJudge(that.players[player].id) && !(that.players[player].chosenCard)) {
+        playernames += that.players[player].name + ', ';
+        count++;
+      }
+    }
+    
+    playernames = playernames.substring(0,  playernames.length - 2);
+
+    // if we arent waiting on anyone to pick a card, we're waiting on the judge
+    if (count === 0) {
+      ss.publish.user(playerId, 'message', 'Waiting for: ' + that.players[that.currentJudge].name + ' to choose the winner.');
+    }
+    else {
+      ss.publish.user(playerId, 'message', 'Waiting for: ' + playernames);
+    }
+  };
+
+  // let player know what card he chose
+  var emitCardChosen = function(playerId) {
+    if (that.players[playerId].chosenCard) {
+      ss.publish.user(playerId, 'cardChosen', that.players[playerId].chosenCard.id);
+    }
+  };
+
+  // let judge know its judging time
+  var emitTimeToJudge = function() {
+    // TODO: encapsulate this shit
+    if (that.totalPlayers() > 1 && that.totalChosenCards() === that.totalPlayers() - 1)
+    {
+      for (var p in that.players) {
+        if (that.isJudge(p)) {
+          ss.publish.user(that.currentJudge, 'timeToJudge', that.currentCards, that.judgeCard);    
+        }
+        else
+        {
+          ss.publish.user(p, 'waitingOnJudge');
+        }
+      }
+    }
+  };
+
+  // announce winner
+  var emitWinner = function(playerId) {
+    ss.publish.channel(req.session.gameId, 'message', that.players[that.currentJudge].name + ' wins!');
+    ss.publish.channel(req.session.gameId, 'announceWinner', that.players[playerId].name); 
+  };
+  // in the first round, let the judge know he can start the game
+  // var emitGameControls = function(playerId) {
+  //   if (that.firstRound && that.isJudge(playerId)) {
+  //     ss.publish.user(playerId, 'gameControls', that.judgeCard);
+  //   } 
+  // };
+
+  // let player know game hasnt started
+  var emitWaitForGameStart = function(playerId) {
+    ss.publish.user(playerId, 'waitForGameStart', '', that.totalPlayers(), that.isJudge(playerId), that.id, that.lookupId);
+  };
+
+  // if there are enough players, let judge know he can start the game
+  var emitJudgeStart = function() {
+    if (that.totalPlayers() > 1) {
+      ss.publish.user(that.currentJudge, 'canStart');
+    }
+  };
 
 
   //-----------------
@@ -281,9 +385,12 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
     removeChosenCards();
     that.currentCards = [];
 
+    that.round++;
+
     // move players from the waiting list into the game
     for (var waitplayer in that.waitingList) {
       that.players[that.waitingList[waitplayer].id] = that.waitingList[waitplayer];
+      that.emitGameStart(waitplayer);
     }
     that.waitingList = [];
 
@@ -313,7 +420,7 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
       
       // let the judge know hes judging
       if (that.isJudge(that.players[player1].id)) {
-        ss.publish.user(that.players[player1].id, 'judgify', that.judgeCard);
+        ss.publish.user(that.players[player1].id, 'judgify', that.judgeCard, that.lookupId, that.round, that.isJudge(player1));
       }
 
       // give player black card
@@ -435,7 +542,7 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
 
   // remove a chosen card
   var removeChosenCards = function() {
-
+    console.log('removing cards...');
     for (var player in that.players) {
       if (that.players[player].chosenCard) {
         console.log('removing: ' + that.players[player].chosenCard.id);
@@ -449,97 +556,6 @@ var Game = function(id, gameWhiteCards, gameBlackCards, ss, req) {
       }
       
       that.players[player].chosenCard = undefined;
-    }
-  };
-
-  // ----------------
-  // notifications
-  // ----------------
-
-  var emitNewCards = function(playerId) {
-
-    // if hes not the judge, give him cards
-    if (!that.isJudge(playerId)) {
-      if (that.players[playerId].cards.length < MAXWHITECARDS) {
-        var newCards = getCards(MAXWHITECARDS - that.players[playerId].cards.length, CARDTYPES.WHITE);
-        that.players[playerId].cards = that.players[playerId].cards.concat(newCards);
-
-      }
-
-      // notify player
-      ss.publish.user(playerId, 'newCards', that.players[playerId].cards, that.judgeCard);
-    }
-  };
-
-  // let everyone know a player left
-  var emitPlayerLeave = function(playerId) {
-    ss.publish.channel(req.session.gameId, 'playerLeave', that.players[playerId].name); 
-  };
-
-  // let players know who is left to choose a card
-  var emitWaitingOnPlayers = function(playerId) {
-    var playernames = '';
-    var count = 0;
-
-    for (var player in that.players)
-    {
-      if (!that.isJudge(that.players[player].id) && !(that.players[player].chosenCard)) {
-        playernames += that.players[player].name + ', ';
-        count++;
-      }
-    }
-    
-    playernames = playernames.substring(0,  playernames.length - 2);
-
-    // if we arent waiting on anyone to pick a card, we're waiting on the judge
-    if (count === 0) {
-      ss.publish.user(playerId, 'message', 'Waiting for: ' + that.players[that.currentJudge].name + ' to choose the winner.');
-    }
-    else {
-      ss.publish.user(playerId, 'message', 'Waiting for: ' + playernames);
-    }
-  };
-
-  // let player know what card he chose
-  var emitCardChosen = function(playerId) {
-    if (that.players[playerId].chosenCard) {
-      ss.publish.user(playerId, 'cardChosen', that.players[playerId].chosenCard.id);
-    }
-  };
-
-  // let judge know its judging time
-  var emitTimeToJudge = function() {
-    // TODO: encapsulate this shit
-    if (that.totalPlayers() > 1 && that.totalChosenCards() === that.totalPlayers() - 1)
-    {
-      for (var p in that.players) {
-        if (that.isJudge(p)) {
-          ss.publish.user(that.currentJudge, 'timeToJudge', that.currentCards, that.judgeCard);    
-        }
-        else
-        {
-          ss.publish.user(p, 'waitingOnJudge');
-        }
-      }
-    }
-  };
-
-  // in the first round, let the judge know he can start the game
-  // var emitGameControls = function(playerId) {
-  //   if (that.firstRound && that.isJudge(playerId)) {
-  //     ss.publish.user(playerId, 'gameControls', that.judgeCard);
-  //   } 
-  // };
-
-  // let player know game hasnt started
-  var emitWaitForGameStart = function(playerId) {
-    ss.publish.user(playerId, 'waitForGameStart');
-  };
-
-  // if there are enough players, let judge know he can start the game
-  var emitJudgeStart = function() {
-    if (that.totalPlayers() > 1) {
-      ss.publish.user(that.currentJudge, 'canStart');
     }
   };
 };

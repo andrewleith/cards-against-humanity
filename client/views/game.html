@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <!-- Set the viewport width to device width for mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+
+  <SocketStream/>
+  <title>Cards Against Humanity</title>
+</head>
+<body>
+
+
+  <div class="container" id="headernav">
+    <div class="top-bar">
+      <div id="nav-container">
+        <div class="container">
+          <span class="nav-item"></span>
+          <span class="nav-item active">Category</span>
+          <span class="nav-item">Your cards</span>
+          <span class="nav-item">Scoreboard</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row centered">
+    <div class="twelve columns round">
+      <h2 style="color: #2ba6cb; text-align:center">Round 1</h2>
+    </div>
+  </div>
+  <div class="row">
+    <div class="twelve columns">
+      <div id="messages" class="alert-box" style="display:none"></div>
+    </div>
+  </div>
+  <div class="row">
+    <!-- <div class="twelve columns"> -->
+    <div id="gamecontrols">
+      <div class="twelve columns">
+        <h2>What this is?</h2>
+        <p>
+          The idea is that you play this game exactly the way you would play the cards against humanity card game:
+          You play in person against your friends (with phones instead of cards), while drinking.
+        </p>
+        <h2>How do you play?</h3>
+        <p>
+          The judge reads the black card aloud, and everyone else picks their best white card to go along with it.
+          The judge reads all of the white cards aloud and chooses one.
+        </p>
+      </div>
+      <div class="twelve columns">
+        <div class="panel callout radius">
+          <h2>So, let's play</h2>
+          <p>
+            If you want to join a game someone else has already created, ask them to text or email you the link.
+          </p>
+          <form id="join" onsubmit="return false">
+            <div class="row">
+              <div class="six columns">
+                <input type="text" id="username" placeholder="Your name" />
+              </div>
+              <div class="six columns">
+                <input type="text" id="gameId" placeholder="name of the game" />
+              </div>
+            </div>
+            <input type="submit" class="secondary button" value="Create a game!" />
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- </div> -->
+  </div>
+  <div class="row" id="gamestart">
+    <div class="" id="responsiveWidth">
+      <div class="swipe-container">
+        <div id="swiper" class="swiper">   
+          <div class="view scroll">
+            <div class="twelve columns" id="blackcard" style="display:none"></div>
+          </div>
+          <div class="view scroll">
+            <div id="whitecards" style="display:none"></div>
+            <div class="twelve columns" id="chosencards" style="display:none"></div>
+            
+
+          </div>
+          <div class="view hidescroll">
+            <div class="large-12 columns end">
+              <table class="small-12">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>Player</th>
+                    <th>Score</th>
+                  </tr>
+                </thead>
+                <tbody id="playerslist">
+                  <tr id="emptylist">
+                    <td>
+                      <td>Nobody yet.</td>
+                      <td></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <hr />
+
+              <div id="invite"></div>              
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="choose" class="reveal-modal small">
+      <p>Select card</p>
+    </div>
+  </body>
+  </html>

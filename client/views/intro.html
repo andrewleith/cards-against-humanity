@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <!-- Set the viewport width to device width for mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <SocketStream/>
+  <title>Cards Against Humanity</title>
+</head>
+<body id="intro">
+  <div class="row">
+    <div class="" id="responsiveWidth">
+      <div class="swipe-container">
+        <div id="swiper" class="swiper">   
+          <div class="view scroll">
+            <div class="small-12 large-8 small-centered columns">
+             <h2>Cards Against Humanity</h2>
+             <p>
+              The idea is that you play this game exactly the way you would play the cards against humanity card game:
+              You play in person against your friends (with phones instead of cards), while drinking.              
+            </p>
+            <p>
+              <a id="rules" href="#">Rules <i class="general foundicon-right-arrow"></i></a>
+            </p>
+          </div>
+        </div>
+        <div class="view scroll">
+          <div class="small-12 large-8 small-centered columns">
+            <h2>How do you play?</h3>
+              <p>
+                The judge reads the black card aloud, and everyone else picks their best white card to go along with it.
+                The judge reads all of the white cards aloud and chooses one.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row" id="start">
+    <div class="small-12 columns small-centered">
+      <!-- <div class="navigation">
+        <div class="item active"></div>
+        <div class="item"></div>
+      </div> -->
+      <button id="startgame">Start playing</button>
+    </div>
+  </div>
+  <div class="row callout panel" id="startpanel">
+    <div class="small-12 columns small-centered">
+      <div>
+        <h2>So, let's play</h2>
+        <form id="join" onsubmit="return false">
+          <div class="row">
+            <div class="six columns">
+              <input type="text" id="username" placeholder="Your name" />
+            </div>
+          </div>
+          <input type="submit" class="secondary button" value="Create a game!" />
+        </form>
+        <hr />
+        <p>
+          If you want to join a game someone else has already created, ask them to text or email you the link.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Hide address bar on devices like the iPhone
+    //---------------------------------------------
+    // function hideAddressBar(bPad) {
+    //   // Big screen. Fixed chrome likely.
+    //   if(screen.width > 980 || screen.height > 980) return;
+
+    //   // Standalone (full screen webapp) mode
+    //   if(window.navigator.standalone === true) return;
+
+    //   // Page zoom or vertical scrollbars
+    //   if(window.innerWidth !== document.documentElement.clientWidth) {
+    //     // Sometimes one pixel too much. Compensate.
+    //     if((window.innerWidth - 1) !== document.documentElement.clientWidth) return;
+
+    //   }
+
+    //   setTimeout(function() {
+    //     // Already scrolled?
+    //     if(window.pageYOffset !== 0) return;
+
+    //     // Perform autoscroll
+    //     window.scrollTo(0, 1);
+
+    //     // Reset body height and scroll
+    //     if(bodyTag !== undefined) bodyTag.style.height = window.innerHeight + 'px';
+    //     window.scrollTo(0, 0);
+
+    //   }, 1000);
+
+    // }
+    </script>
+  </body>
+  </html>

@@ -1,14 +1,32 @@
-<div class="row centered">
-  <div class="twelve columns">
-    <h2 style="color: #2ba6cb; text-align:center">Round 1</h2>
-  </div>
-</div>
+
 <div class="row">
   {{#cards}}
-    <div class="four columns end centered">
-      <div class="panel radius card black" id="{{id}}">
-        <h3>{{title}}</h3>
-      </div>
+  <div class="large-4 small-12 columns end small-centered">
+    <div class="panel radius card black" id="{{id}}">
+      <h3>{{title}}</h3>
     </div>
+  </div>
   {{/cards}}
 </div>
+
+{{#judge}}
+<div class="row">
+  <div class="small-12 large-4 small-centered columns">
+    <h2>You're the judge</h2>
+    <p>
+      Take a drink and wait for your retarded friends to pick their cards.
+    </p>
+  </div>
+</div>
+
+{{/judge}}
+
+{{#player}}
+<hr />
+<div class="row">
+  <div class="small-12 large-4 columns small-centered">
+    <button id="look" class="expand">Look at your cards <i class="general foundicon-right-arrow"></i></button>
+  </div>
+</div>
+
+{{/player}}

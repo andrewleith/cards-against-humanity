@@ -1,28 +1,40 @@
-<div class="twelve columns">
-  <h2>What now?</h2>
-  {{#judge}}
-  <p>
-    You're the judge, so you can start the game. 
-  </p>
-  {{/judge}}
-  {{#player}}
-  <p> 
-    The judge gets to decide when the game starts.  Look to the players list to see who that is. 
-    They're the one with the start by their name.
-    If you have a problem, take it up with them.
-  </p>
-  {{/player}}
-  {{#notenoughplayers}}
-  <div id="notenough">
-    <p>
-     BUT, you're all alone, so no, nevermind, you can't.
-   </p>
- </div>
- {{/notenoughplayers}}
 
- <div id="startButton" class="callout panel radius">
-  <h2>Hot Dog!</h2>
-  <p>You can start the game now if you want.  New players can join at any time.</p>
-  <button id="start" class="button success">Start the game!</button>
+
+  <div class="small-12 columns">
+    <h2>What now?</h2>
+    
+  </div>
+
+
+
+  {{#judge}}
+  <div class="small-12 large-12 columns">
+    <p>
+      You can start the game once there is enough players.
+    </p>
+    <div class="panel">
+      <span class="alert-heading">Invite some friends.</span>
+      <p class="indent">Send <a href="join?gameid={{gameId}}"><strong>this link</strong></a> to your friends so they can join the game. </p>
+    </div>
+  </div>
+  {{/judge}}
+
+
+
+{{#player}}
+<div class="small-12 columns">
+  <p> 
+    The judge gets to decide when the game starts.  For now, sit tight and relax.
+    They will let you know when its going to start.
+  </p>
 </div>
+{{/player}}
+
+
+<div class="small-12 columns">
+  <div id="startButton" class="callout panel radius">
+    <h2>Hot Dog!</h2>
+    <p>You can start the game now if you want.  New players can join at any time.</p>
+    <button id="start" class="button success">Start the game!</button>
+  </div>
 </div>

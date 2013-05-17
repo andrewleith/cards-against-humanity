@@ -1,0 +1,5 @@
+<div class="row centered">
+  <div class="twelve columns round">
+    <h2 style="color: #2ba6cb; text-align:center">Round {{round}}</h2>
+  </div>
+</div>

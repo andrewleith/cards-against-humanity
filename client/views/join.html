@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <!-- Set the viewport width to device width for mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+
+  <SocketStream/>
+  <title>Cards Against Humanity</title>
+</head>
+<body>
+  <div class="row">
+    <div class="twelve columns">
+
+      <h2>So, let's play</h2>
+      <p>
+        Enter your name to join.
+      </p>
+      <form id="joingame" onsubmit="return false">
+        <div class="row">
+          <div class="six columns">
+            <input type="text" id="joinname" placeholder="Your name" />
+          </div>
+        </div>
+        <input type="submit" class="success button" value="Join the game!" />
+      </form>
+    </div>
+  </div>
+</body>
+</html>

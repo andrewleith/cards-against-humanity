@@ -10,8 +10,12 @@
 
 .hidescroll { overflow: hidden; height: 100%; } 
 /* initial UI states */
-#messages, #blackcard, #whitecards, #startButton, #gamestart, #headernav {
+#messages, #blackcard, #whitecards, #startButton, #gamestart, #headernav, #gamecontrols, .round {
   display: none;
+}
+
+#messages {
+  opacity: 0;
 }
 .scroll {
   overflow: hidden;
@@ -19,8 +23,11 @@
   -webkit-overflow-scrolling: touch;
 }
 
+.round {
+  margin-top:20px;
+}
 /* white cards */
-#whitecards {
+#whitecards, #chosencards {
   padding-bottom: 100px;
 }
 #whitecards.panel {
@@ -32,19 +39,31 @@
   padding-top: 20px;
   min-height: 200px;
 }
-
+.general {
+  font-size: 20px;
+  vertical-align: top !important;
+}
 #nav {
   margin-bottom: 10px;
 }
 #gamestart {
   height: 100%;
 }
+
+/* waiting for game to start */
+.alert-heading {
+  font-size: 30px;
+  margin-bottom:20px;
+  display: inline-block;
+}
+
+
 /* -----------------------------------------
    Shared Styles
    ----------------------------------------- */
 
    p, label {
-    font-size: 16px !important;
+    font-size: 20px !important;
     line-height: 1.8em !important;
     font-weight: 300;
   }
@@ -83,7 +102,7 @@
     padding: 5px;
   }
   .white {
-    min-height: 200px;
+    min-height: 175px;
   }
   .glow {
     box-shadow: 0 0 19px #2ba6cb;
@@ -192,6 +211,7 @@ body, html
    }
    .top-bar {
     width: 10000px;
+    margin-bottom: 0 !important;
   }
   .nav-item { 
     color: #ccc; 
@@ -214,7 +234,7 @@ body, html
     height: 100%;
     position:relative;
   }
-  #swiper {
+  .swiper {
     float:left;
     display:inline;
 
@@ -233,7 +253,7 @@ body, html
     transform: translate3d(0px,0px,0px); 
   }
 
-  #swiper .view { 
+  .swiper .view { 
     width: 300px; 
     height: 100%;
     float:left;
@@ -245,7 +265,7 @@ body, html
 
   #choose {
     bottom: 0;
-    top: auto;
+    top: auto !important;
     width: 100%;
     left: 0;
     margin-left: 0;
@@ -258,3 +278,53 @@ body, html
     cursor: pointer;
   }
   .reveal-modal-bg {opacity: 0.1 !important; }
+
+  .alert-box {
+    margin-bottom: 0 !important;
+  }
+
+  /* override foundation's styles */
+
+  .small-centered {text-align: center;}
+
+
+  /*  --------------
+      intro page 
+      ---------------      */
+      #intro {
+        overflow: hidden;
+        opacity: 0;
+      }
+      .navigation {
+        position: relative;
+        margin-left: auto;
+        margin-right: auto;
+        width: 100px;
+        overflow: auto;
+        margin-bottom: 20px;
+        overflow: hiddne;
+        height: 20px;
+      }
+      .navigation .item {
+        height: 15px;
+        width: 15px;
+        border: 1px solid black;
+        border-radius: 25px;
+        display: inline-block;
+        margin-left: 7px;
+        margin-right: 7px;
+      }
+
+      a#rules {
+        color: #ff9900 !important;
+      }
+      .navigation .active {
+        background-color: #ff9900;
+      }
+      #startpanel {
+        position: absolute;
+        top:1000px;
+      }
+      #join input[type=text] {
+        font-size: 18px;
+      }
